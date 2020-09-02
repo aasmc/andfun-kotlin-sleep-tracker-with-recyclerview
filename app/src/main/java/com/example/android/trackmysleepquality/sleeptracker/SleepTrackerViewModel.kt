@@ -102,6 +102,7 @@ class SleepTrackerViewModel(
      */
 
     private val _navigateToSleepQuality = MutableLiveData<SleepNight>()
+
     /**
      * Call this immediately after calling `show()` on a toast.
      *
@@ -112,6 +113,7 @@ class SleepTrackerViewModel(
     fun doneShowingSnackbar() {
         _showSnackbarEvent.value = false
     }
+
     /**
      * If this is non-null, immediately navigate to [SleepQualityFragment] and call [doneNavigating]
      */
@@ -126,6 +128,28 @@ class SleepTrackerViewModel(
      */
     fun doneNavigating() {
         _navigateToSleepQuality.value = null
+    }
+
+    /**
+     * Event for navigating to the sleepDataQualityFragment
+     */
+    private val _navigateToSleepDataQuality = MutableLiveData<Long>()
+    val navigateToSleepDataQuality: LiveData<Long>
+        get() = _navigateToSleepDataQuality
+
+    /**
+     * Click handler used to listen to clicks on a vew representing SleepNight object
+     * @param nightId ID of the sleepNight that is passed from the ViewHolder and DataBinding
+     */
+    fun onSleepNightClicked(nightId: Long) {
+        _navigateToSleepDataQuality.value = nightId
+    }
+
+    /**
+     * Used to indicate that navigation is done to nullify the reference to the nightId
+     */
+    fun onSleepDataQualityNavigated() {
+        _navigateToSleepDataQuality.value = null
     }
 
     init {
