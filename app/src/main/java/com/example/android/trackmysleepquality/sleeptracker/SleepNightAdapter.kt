@@ -17,10 +17,12 @@
 package com.example.android.trackmysleepquality.sleeptracker
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.example.android.trackmysleepquality.R
 import com.example.android.trackmysleepquality.TextItemViewHolder
 import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.database.SleepNight
@@ -33,7 +35,7 @@ import kotlinx.coroutines.withContext
 import java.lang.ClassCastException
 
 /**
- * Unique identifiers to distinguish among the types of ViewHolders
+ * Unique identifiers to distinguish between the types of ViewHolders
  */
 private const val ITEM_VIEW_TYPE_HEADER = 0
 private const val ITEM_VIEW_TYPE_ITEM = 1
@@ -46,15 +48,33 @@ private const val ITEM_VIEW_TYPE_ITEM = 1
  * No need for getItemCount method
  * Click listener is passed as a property to handle clicks on the views
  */
-class SleepNightAdapter(val clickListener: SleepNightListener) : ListAdapter<DataItem, RecyclerView.ViewHolder>(SleepNightDiffUtilCallback()) {
+class SleepNightAdapter(val clickListener: SleepNightListener) :
+        ListAdapter<DataItem, RecyclerView.ViewHolder>(SleepNightDiffUtilCallback()) { // Changed the declaration from SleepNightAdapter.ViewHolder to RecyclerView.ViewHolder
+    // to allow SleepNightAdapter to hold any type of ViewHolder
+    // also changed SleepNight to DataItem allow to use different items
 
+    // allows to convert lists for the adapter on a separate thread
     private val adapterScope = CoroutineScope(Dispatchers.Default)
 
+    /**
+     * Creates a ViewHolder depending on the viewType
+     */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when(viewType) {
-            ITEM_VIEW_TYPE_HEADER -> TextItemViewHolder.from(parent)
+            ITEM_VIEW_TYPE_HEADER -> TextViewHolder.from(parent)
             ITEM_VIEW_TYPE_ITEM -> ViewHolder.from(parent)
             else -> throw ClassCastException("Uknown viewType $viewType")
+        }
+    }
+
+
+    class TextViewHolder(view: View): RecyclerView.ViewHolder(view) {
+        companion object {
+            fun from(parent: ViewGroup): TextViewHolder {
+                val inflater = LayoutInflater.from(parent.context)
+                val view = inflater.inflate(R.layout.header, parent, false)
+                return TextViewHolder(view)
+            }
         }
     }
 
@@ -79,9 +99,12 @@ class SleepNightAdapter(val clickListener: SleepNightListener) : ListAdapter<Dat
     fun addHeaderAndSubmitList(list: List<SleepNight>?) {
         adapterScope.launch {
             val items = when (list) {
+                // create a list that consists only of the header item
                 null -> listOf(DataItem.Header)
+                // create a list composed of the header item and all SleepNight items retrieved from the database
                 else -> listOf(DataItem.Header) + list.map { DataItem.SleepNightItem(it) }
             }
+            // use this scope to pass the data to the UI thread
             withContext(Dispatchers.Main) {
                 submitList(items)
             }
@@ -162,13 +185,20 @@ class SleepNightListener(val clickListener: (sleepId: Long) -> Unit) {
 
 /**
  * Class that represents an item in this adapter
+ * @property id is necessary to for the DiffUtil.CallBack to differentiate between items
  */
 
 sealed class DataItem {
+    /**
+     * Wrapper around a SleepNight
+     */
     data class SleepNightItem(val sleepNight: SleepNight) : DataItem() {
         override val id: Long = sleepNight.nightId
     }
 
+    /**
+     * Singleton header that will always be unique
+     */
     object Header : DataItem() {
         override val id: Long = Long.MIN_VALUE
     }

@@ -66,6 +66,16 @@ class SleepTrackerFragment : Fragment() {
 
         // create grid layout manager
         val manager = GridLayoutManager(activity, 3)
+        // configuration object that the GridLayoutManager will use to determine how many
+        // spans a view will take depending on its position
+        // need to make it an object because it doesn't take a lambda
+        manager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int) = when (position) {
+                0 -> 3 // if the item's position is 0 then it will occupy all spans
+                else -> 1 // else only one span
+            }
+        }
+
         // set the manager to the recycler view
         binding.sleepList.layoutManager = manager
 
